@@ -1,0 +1,29 @@
+# Python virtual environments and caches
+.venv/
+venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local editor and temporary files
+.vscode/
+.idea/
+.tmp/
+outputs/
+*.log
+Thumbs.db
+.DS_Store
+
+# Local-only settings and secrets
+.env
+.env.*
+!.env.example
+config.local.*
+
+# Downloaded speech-recognition models are restored by setup_models.py
+SO101_SCS215_语音控制/models/
+
+# Hardware-specific calibration records generated locally
+SO101_SCS215_舵机校准与限位/records/*.json

@@ -1,0 +1,6 @@
+# Shared dependencies for the SO-101 control modules.
+numpy>=2.0
+opencv-python>=4.10
+pyserial>=3.5
+sherpa-onnx
+sounddevice

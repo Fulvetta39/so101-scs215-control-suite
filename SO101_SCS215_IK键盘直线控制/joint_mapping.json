@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "notes": "该映射来自一台实机的参考姿态标定。ID5 软件 guard 为 0~1022；运行范围始终取软件 guard、EEPROM 限位和 URDF 限位的交集。",
+  "joints": [
+    {
+      "servo_id": 1,
+      "name": "shoulder_pan",
+      "zero_raw": 449.5,
+      "direction": 1,
+      "wrapped": false,
+      "guard_min": 92,
+      "guard_max": 807
+    },
+    {
+      "servo_id": 2,
+      "name": "shoulder_lift",
+      "zero_raw": 827.6300275,
+      "direction": 1,
+      "guard_min": 453,
+      "guard_max": 1022
+    },
+    {
+      "servo_id": 3,
+      "name": "elbow_flex",
+      "zero_raw": 183.3424316,
+      "direction": 1,
+      "guard_min": 0,
+      "guard_max": 516
+    },
+    {
+      "servo_id": 4,
+      "name": "wrist_flex",
+      "zero_raw": 366.5266884,
+      "direction": 1,
+      "guard_min": 31,
+      "guard_max": 656
+    },
+    {
+      "servo_id": 5,
+      "name": "wrist_roll",
+      "zero_raw": 489.5,
+      "direction": 1,
+      "guard_min": 0,
+      "guard_max": 1022
+    }
+  ]
+}

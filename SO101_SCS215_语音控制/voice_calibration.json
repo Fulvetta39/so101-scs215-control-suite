@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "direction_load_bias_raw": {
+    "up": [
+      0,
+      -4,
+      -12,
+      1,
+      0
+    ]
+  },
+  "validation": {
+    "up": {
+      "date": "2026-10-02",
+      "start_raw": [
+        424,
+        457,
+        514,
+        521,
+        491,
+        136
+      ],
+      "requested_cm": 5.0,
+      "actual_cm": 4.52,
+      "bus_voltage_v": 4.9,
+      "max_tracking_error_raw": 4,
+      "note": "Voice-control-only validated load bias; revalidate after power or mechanical changes."
+    }
+  }
+}

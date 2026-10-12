@@ -1,0 +1,138 @@
+{
+  "schema": 1,
+  "servo_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "poses": {
+    "姿态1": {
+      "key": "1",
+      "positions": [
+        422,
+        584,
+        367,
+        150,
+        483,
+        127
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    },
+    "姿态2": {
+      "key": "2",
+      "positions": [
+        669,
+        496,
+        407,
+        273,
+        483,
+        127
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    },
+    "姿态3": {
+      "key": "3",
+      "positions": [
+        216,
+        496,
+        407,
+        273,
+        483,
+        127
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    },
+    "姿态4": {
+      "key": "4",
+      "positions": [
+        424,
+        484,
+        516,
+        232,
+        483,
+        127
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    },
+    "姿态5": {
+      "key": "5",
+      "positions": [
+        425,
+        484,
+        516,
+        232,
+        483,
+        358
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    },
+    "初始姿态": {
+      "key": "0",
+      "positions": [
+        421,
+        455,
+        515,
+        595,
+        483,
+        132
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    },
+    "姿态6": {
+      "key": "6",
+      "positions": [
+        428,
+        755,
+        238,
+        224,
+        483,
+        396
+      ],
+      "transition_s": 1.5,
+      "source": "hardware_readback",
+      "wrap_confirmed_ids": []
+    }
+  },
+  "actions": {
+    "往返演示": {
+      "key": "1",
+      "steps": [
+        {
+          "pose": "姿态3",
+          "transition_s": 1.5,
+          "hold_s": 0.4
+        },
+        {
+          "pose": "初始姿态",
+          "transition_s": 1.5,
+          "hold_s": 0.4
+        },
+        {
+          "pose": "姿态3",
+          "transition_s": 1.5,
+          "hold_s": 0.4
+        },
+        {
+          "pose": "初始姿态",
+          "transition_s": 1.5,
+          "hold_s": 0.0
+        }
+      ]
+    }
+  }
+}

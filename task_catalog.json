@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "project_name": "SO-101 控制平台",
+  "tasks": [
+    {
+      "id": "multi_joint",
+      "name": "多关节预设姿态与连续动作",
+      "description": "记录和执行预设姿态，或组合多个姿态生成连续动作。",
+      "working_directory": "SO101_SCS215_多关节连续控制",
+      "entry": "multi_joint_control.py",
+      "actions": [
+        {
+          "id": "diagnose",
+          "name": "读取舵机状态",
+          "safety": "read_only",
+          "arguments": ["--port", "{port}", "diagnose"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        },
+        {
+          "id": "real",
+          "name": "启动运动控制",
+          "safety": "real",
+          "arguments": ["--port", "{port}", "run", "--real"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ik",
+      "name": "IK 笛卡尔直线控制",
+      "description": "使用逆运动学控制末端沿基座坐标系直线移动。",
+      "working_directory": "SO101_SCS215_IK键盘直线控制",
+      "entry": "ik_keyboard_control.py",
+      "actions": [
+        {
+          "id": "diagnose",
+          "name": "读取舵机状态",
+          "safety": "read_only",
+          "arguments": ["--port", "{port}", "diagnose"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        },
+        {
+          "id": "real",
+          "name": "启动键盘运动控制",
+          "safety": "real",
+          "arguments": ["--port", "{port}", "run", "--real"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "name": "语音控制",
+      "description": "使用本地中文语音识别触发预设姿态或笛卡尔移动。",
+      "working_directory": "SO101_SCS215_语音控制",
+      "entry": "voice_control.py",
+      "actions": [
+        {
+          "id": "devices",
+          "name": "列出麦克风设备",
+          "safety": "safe",
+          "arguments": ["devices"]
+        },
+        {
+          "id": "asr_only",
+          "name": "仅运行语音识别",
+          "safety": "safe",
+          "arguments": ["listen", "--asr-only", "--device", "{device}"],
+          "inputs": [
+            {"name": "device", "label": "麦克风编号", "default": "", "type": "int", "minimum": 0}
+          ]
+        },
+        {
+          "id": "diagnose",
+          "name": "读取舵机状态",
+          "safety": "read_only",
+          "arguments": ["--port", "{port}", "diagnose"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        },
+        {
+          "id": "real",
+          "name": "启动语音运动控制",
+          "safety": "real",
+          "arguments": [
+            "--port", "{port}", "listen", "--real", "--device", "{device}"
+          ],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""},
+            {"name": "device", "label": "麦克风编号", "default": "", "type": "int", "minimum": 0}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vision",
+      "name": "黑球视觉闭环控制",
+      "description": "检测黑球并通过笛卡尔微步进减小目标与画面中心的偏差。",
+      "working_directory": "SO101_SCS215_视觉闭环控制",
+      "entry": "visual_closed_loop.py",
+      "actions": [
+        {
+          "id": "camera",
+          "name": "摄像头检测预览",
+          "safety": "safe",
+          "arguments": ["camera", "--camera", "{camera}", "--rotate", "{rotate}"],
+          "inputs": [
+            {"name": "camera", "label": "摄像头编号", "default": "0", "required": true, "type": "int", "minimum": 0},
+            {
+              "name": "rotate",
+              "label": "画面旋转角度",
+              "default": "0",
+              "required": true,
+              "choices": [
+                {"value": "0", "label": "不旋转"},
+                {"value": "90", "label": "顺时针 90 度"},
+                {"value": "180", "label": "旋转 180 度"},
+                {"value": "270", "label": "顺时针 270 度"}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "real",
+          "name": "启动保守闭环控制（最多 3 步、累计 0.8 cm）",
+          "safety": "real",
+          "arguments": [
+            "run", "--camera", "{camera}", "--rotate", "{rotate}",
+            "--headless", "--port", "{port}", "--real", "--max-moves", "3",
+            "--max-total-cm", "0.8"
+          ],
+          "inputs": [
+            {"name": "camera", "label": "摄像头编号", "default": "0", "required": true, "type": "int", "minimum": 0},
+            {
+              "name": "rotate",
+              "label": "画面旋转角度",
+              "default": "0",
+              "required": true,
+              "choices": [
+                {"value": "0", "label": "不旋转"},
+                {"value": "90", "label": "顺时针 90 度"},
+                {"value": "180", "label": "旋转 180 度"},
+                {"value": "270", "label": "顺时针 270 度"}
+              ]
+            },
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "calibration",
+      "name": "舵机校准、限位与状态监视",
+      "description": "读取 SCS215 状态、监视六轴、测量运动范围并安全更新 EEPROM 限位。",
+      "working_directory": "SO101_SCS215_舵机校准与限位",
+      "entry": "scs215_calibrate.py",
+      "actions": [
+        {
+          "id": "monitor",
+          "name": "打开六轴只读监视器",
+          "safety": "read_only",
+          "entry": "servo_monitor.py",
+          "arguments": ["--port", "{port}"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        },
+        {
+          "id": "diagnose",
+          "name": "读取舵机状态",
+          "safety": "read_only",
+          "arguments": ["--port", "{port}", "diagnose"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        },
+        {
+          "id": "torque_off",
+          "name": "关闭六轴扭矩",
+          "safety": "hardware",
+          "arguments": ["--port", "{port}", "torque-off"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
+          ]
+        },
+        {
+          "id": "measure",
+          "name": "手动测量舵机范围",
+          "safety": "read_only",
+          "arguments": [
+            "--port", "{port}", "measure", "--seconds", "{seconds}",
+            "--margin", "{margin}", "--ids", "{ids}"
+          ],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""},
+            {"name": "seconds", "label": "测量时长（秒）", "default": "90", "required": true, "type": "float", "minimum": 1},
+            {"name": "margin", "label": "限位安全余量（raw）", "default": "5", "required": true, "type": "int", "minimum": 0},
+            {"name": "ids", "label": "舵机 ID，例如 1,2,3,4,5,6", "default": "1,2,3,4,5,6", "required": true}
+          ]
+        },
+        {
+          "id": "preview_limits",
+          "name": "预览 EEPROM 限位提案",
+          "safety": "read_only",
+          "arguments": ["--port", "{port}", "apply", "--proposal", "{proposal}"],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""},
+            {"name": "proposal", "label": "限位提案文件", "default": "records/limit_proposal.json", "required": true}
+          ]
+        },
+        {
+          "id": "write_limits",
+          "name": "写入 EEPROM 限位并回读验证",
+          "safety": "hardware",
+          "arguments": [
+            "--port", "{port}", "apply", "--proposal", "{proposal}", "--confirm"
+          ],
+          "inputs": [
+            {"name": "port", "label": "串口，例如 COM5", "default": ""},
+            {"name": "proposal", "label": "限位提案文件", "default": "records/limit_proposal.json", "required": true}
+          ]
+        }
+      ]
+    }
+  ]
+}
