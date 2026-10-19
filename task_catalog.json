@@ -103,16 +103,41 @@
     },
     {
       "id": "vision",
-      "name": "黑球视觉闭环控制",
-      "description": "检测黑球并通过笛卡尔微步进减小目标与画面中心的偏差。",
+      "name": "ArUco 视觉伺服",
+      "description": "提供图像分区闭环接近、四角点 IBVS 仿真、相机检查与标定支持。",
       "working_directory": "SO101_SCS215_视觉闭环控制",
-      "entry": "visual_closed_loop.py",
+      "entry": "aruco_visual_servo.py",
       "actions": [
         {
-          "id": "camera",
-          "name": "摄像头检测预览",
+          "id": "check",
+          "name": "检查软件、URDF 与标定文件",
           "safety": "safe",
-          "arguments": ["camera", "--camera", "{camera}", "--rotate", "{rotate}"],
+          "arguments": ["check"]
+        },
+        {
+          "id": "camera_scan",
+          "name": "枚举可用摄像头",
+          "safety": "safe",
+          "arguments": ["camera-scan", "--max-index", "{max_index}"],
+          "inputs": [
+            {"name": "max_index", "label": "最大摄像头编号", "default": "4", "required": true, "type": "int", "minimum": 0}
+          ]
+        },
+        {
+          "id": "ibvs_simulation",
+          "name": "运行四角点 IBVS 纯仿真",
+          "safety": "safe",
+          "arguments": ["simulate-ibvs"]
+        },
+        {
+          "id": "preflight",
+          "name": "读取相机与机械臂并规划首步",
+          "safety": "read_only",
+          "entry": "aruco_simple_servo.py",
+          "arguments": [
+            "--check", "--camera", "{camera}", "--rotate", "{rotate}",
+            "--port", "{port}"
+          ],
           "inputs": [
             {"name": "camera", "label": "摄像头编号", "default": "0", "required": true, "type": "int", "minimum": 0},
             {
@@ -126,17 +151,18 @@
                 {"value": "180", "label": "旋转 180 度"},
                 {"value": "270", "label": "顺时针 270 度"}
               ]
-            }
+            },
+            {"name": "port", "label": "串口，例如 COM5", "default": ""}
           ]
         },
         {
           "id": "real",
-          "name": "启动保守闭环控制（最多 3 步、累计 0.8 cm）",
+          "name": "启动简单版 ArUco 闭环（最多 45 步）",
           "safety": "real",
+          "entry": "aruco_simple_servo.py",
           "arguments": [
-            "run", "--camera", "{camera}", "--rotate", "{rotate}",
-            "--headless", "--port", "{port}", "--real", "--max-moves", "3",
-            "--max-total-cm", "0.8"
+            "--real", "--camera", "{camera}", "--rotate", "{rotate}",
+            "--port", "{port}", "--max-moves", "45"
           ],
           "inputs": [
             {"name": "camera", "label": "摄像头编号", "default": "0", "required": true, "type": "int", "minimum": 0},

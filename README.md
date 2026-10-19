@@ -9,7 +9,7 @@
 | 多关节动作 | 记录、执行和组合预设姿态 |
 | IK 直线控制 | 沿基座坐标系执行笛卡尔直线移动 |
 | 语音控制 | 本地中文语音识别与白名单动作解析 |
-| 视觉闭环 | 检测黑球并用笛卡尔微步进对准画面中心 |
+| ArUco 视觉伺服 | 图像分区真机闭环、四角点 IBVS 仿真、相机与手眼标定 |
 | 校准与监视 | 六轴状态监视、范围测量和 EEPROM 限位管理 |
 
 ## 硬件与环境
@@ -81,6 +81,8 @@ py -3.12 -m venv .venv
 - `SO101_SCS215_多关节连续控制/poses.json`：预设姿态和组合动作。
 - `SO101_SCS215_IK键盘直线控制/joint_mapping.json`：舵机值与 URDF 关节角映射。
 - `SO101_SCS215_语音控制/voice_calibration.json`：语音控制使用的负载补偿。
+- `SO101_SCS215_视觉闭环控制/data/camera_calibration.json`：相机内参与畸变参数。
+- `SO101_SCS215_视觉闭环控制/data/hand_eye_calibration.json`：相机到末端的手眼变换。
 - `task_catalog.json`：统一启动器的模块与操作清单。
 
 这些标定和姿态数据与具体机械臂相关。连接其他机械臂前，应先执行只读诊断并重新验证映射、限位和运动方向。
@@ -114,9 +116,7 @@ Push-Location SO101_SCS215_IK键盘直线控制
 ..\.venv\Scripts\python.exe -B -m unittest -v test_ik_keyboard_control.py
 Pop-Location
 
-Push-Location SO101_SCS215_视觉闭环控制
-..\.venv\Scripts\python.exe -B -m unittest -v test_visual_closed_loop.py
-Pop-Location
+.\.venv\Scripts\python.exe -B SO101_SCS215_视觉闭环控制\aruco_visual_servo.py check
 
 Push-Location SO101_SCS215_舵机校准与限位
 ..\.venv\Scripts\python.exe -B -m unittest -v test_scs215_calibrate.py

@@ -35,15 +35,12 @@ class CatalogTests(unittest.TestCase):
                 task["id"],
             )
 
-    def test_menu_has_no_status_labels_or_simulation_actions(self) -> None:
+    def test_menu_has_no_status_labels_or_legacy_demo_actions(self) -> None:
         removed_action_ids = {"dry_run", "text_dry_run", "demo"}
         for task in self.catalog["tasks"]:
             self.assertNotIn("status", task)
             self.assertTrue(removed_action_ids.isdisjoint(
                 action["id"] for action in task["actions"]
-            ))
-            self.assertTrue(all(
-                "模拟" not in action["name"] for action in task["actions"]
             ))
 
 class CommandTests(unittest.TestCase):
@@ -97,12 +94,23 @@ class CommandTests(unittest.TestCase):
         self.assertFalse(confirm_action(action, lambda _prompt: "real", quiet))
         self.assertTrue(confirm_action(action, lambda _prompt: "REAL", quiet))
 
-    def test_visual_real_action_keeps_conservative_limits(self) -> None:
+    def test_visual_actions_use_aruco_entries_and_real_gate(self) -> None:
         task = find_task(self.catalog, "vision")
+        self.assertEqual(task["entry"], "aruco_visual_servo.py")
+        simulation = find_action(task, "ibvs_simulation")
+        self.assertEqual(simulation["safety"], "safe")
+        self.assertEqual(simulation["arguments"], ["simulate-ibvs"])
+
+        preflight = find_action(task, "preflight")
+        self.assertEqual(preflight["entry"], "aruco_simple_servo.py")
+        self.assertEqual(preflight["safety"], "read_only")
+
         action = find_action(task, "real")
+        self.assertEqual(action["entry"], "aruco_simple_servo.py")
+        self.assertIn("--real", action["arguments"])
         command, _ = build_command(task, action)
-        self.assertEqual(command[command.index("--max-moves") + 1], "3")
-        self.assertEqual(command[command.index("--max-total-cm") + 1], "0.8")
+        self.assertEqual(command[command.index("--max-moves") + 1], "45")
+        self.assertNotIn("--startup-raw", command)
 
 
 if __name__ == "__main__":
