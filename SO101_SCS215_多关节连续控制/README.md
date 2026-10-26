@@ -8,7 +8,7 @@
 ..\.venv\Scripts\python.exe multi_joint_control.py --port COM5 diagnose
 ```
 
-该命令读取型号、位置、EEPROM 限位、扭矩和电压，不发送目标位置，也不改变扭矩状态。省略 `--port` 时会尝试识别唯一的 CH343 设备。
+该命令读取型号、位置、EEPROM 限位和扭矩（不读电压；看电压用 IK 模块的 `diagnose`），不发送目标位置，也不改变扭矩状态。省略 `--port` 时会尝试识别唯一的 CH343 设备。
 
 ## 记录姿态
 
