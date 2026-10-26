@@ -1,3 +1,2 @@
-numpy>=2.0
-opencv-python>=4.10
-pyserial>=3.5
+# The vision module uses the shared project dependencies.
+-r ../requirements.txt

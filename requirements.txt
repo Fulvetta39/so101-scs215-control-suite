@@ -1,6 +1,7 @@
 # Shared dependencies for the SO-101 control modules.
 numpy>=2.0
-opencv-python>=4.10
+# OpenCV 5 removed cv2.calibrateHandEye from the main namespace; stay on 4.x.
+opencv-python>=4.10,<5
 pyserial>=3.5
 sherpa-onnx
 sounddevice
