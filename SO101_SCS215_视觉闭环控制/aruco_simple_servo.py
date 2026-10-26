@@ -675,14 +675,16 @@ def execute(args: argparse.Namespace) -> int:
                 except Exception:
                     driver.shutdown()
                     raise
-            branch_reference_raw = driver.bus.positions()
-            log["branch_reference_raw"] = list(branch_reference_raw)
-            print(
-                "自主接近构型保护已启用："
-                f"以当前初始姿态为分支参考，ID3 不得超过 "
-                f"{branch_reference_raw[2] + args.elbow_branch_margin_raw}。"
-            )
+            # --startup-raw may already have enabled torque; any read, planning or
+            # preflight failure below must not leave the arm torqued on exit.
             try:
+                branch_reference_raw = driver.bus.positions()
+                log["branch_reference_raw"] = list(branch_reference_raw)
+                print(
+                    "自主接近构型保护已启用："
+                    f"以当前初始姿态为分支参考，ID3 不得超过 "
+                    f"{branch_reference_raw[2] + args.elbow_branch_margin_raw}。"
+                )
                 first = observe(
                     capture,
                     args.rotate,
@@ -701,67 +703,67 @@ def execute(args: argparse.Namespace) -> int:
                     f"plane_clearance={first.gripper_plane_clearance_m * 1000:.1f} mm"
                 )
                 joints, gripper_raw = driver.get_joint_state()
-            except Exception:
+                (
+                    motion_mode,
+                    delta,
+                    target,
+                    dominant,
+                    dry_result,
+                    dry_joints,
+                    desired,
+                    marker_base,
+                    remaining,
+                    plane_clearance,
+                ) = plan_hybrid_step(
+                    kinematics,
+                    joints,
+                    gripper_raw,
+                    driver.effective_joint_limits_deg,
+                    hand_eye,
+                    first,
+                    args.clearance_mm / 1000.0,
+                    args.step_cm / 100.0,
+                    args,
+                )
+                dry_raw = tuple(
+                    mapping.degrees_to_raw(angle)
+                    for mapping, angle in zip(mappings, dry_joints, strict=True)
+                )
+                validate_branch_candidate(
+                    branch_reference_raw,
+                    dry_raw,
+                    args.elbow_branch_margin_raw,
+                )
+                print(
+                    f"首步离线规划：{motion_mode}"
+                    + f", base_delta_mm={[round(value * 1000, 2) for value in delta]}, "
+                    + f"dominant={dominant}, reachable={dry_result.executed_m * 1000:.1f}/"
+                    + f"{dry_result.requested_m * 1000:.1f} mm, remaining={remaining * 1000:.1f} mm, "
+                    + f"plane={plane_clearance * 1000:.1f} mm, final_raw={dry_raw}"
+                )
+                if remaining > args.goal_tolerance_mm / 1000.0 and dry_result.executed_m < args.min_partial_mm / 1000.0:
+                    raise RuntimeError("首步安全可达距离太短，拒绝启动")
+                if args.check:
+                    log["preflight"] = {
+                        "observation": state_payload(first),
+                        "motion_mode": motion_mode,
+                        "base_delta_m": delta.tolist(),
+                        "target_base_m": target.tolist(),
+                        "desired_gripper_base_m": desired.tolist(),
+                        "marker_origin_base_m": marker_base.tolist(),
+                        "remaining_to_standoff_m": remaining,
+                        "plane_clearance_m": plane_clearance,
+                        "dominant_base_direction": dominant,
+                        "planned_executed_m": dry_result.executed_m,
+                        "planned_full_success": dry_result.full_success,
+                        "planned_final_raw": list(dry_raw),
+                    }
+                    write_run_log(output_dir, log)
+                    print("只读预检完成：未开启扭矩、未发送运动指令。")
+                    return 0
+            except BaseException:
                 driver.shutdown()
                 raise
-            (
-                motion_mode,
-                delta,
-                target,
-                dominant,
-                dry_result,
-                dry_joints,
-                desired,
-                marker_base,
-                remaining,
-                plane_clearance,
-            ) = plan_hybrid_step(
-                kinematics,
-                joints,
-                gripper_raw,
-                driver.effective_joint_limits_deg,
-                hand_eye,
-                first,
-                args.clearance_mm / 1000.0,
-                args.step_cm / 100.0,
-                args,
-            )
-            dry_raw = tuple(
-                mapping.degrees_to_raw(angle)
-                for mapping, angle in zip(mappings, dry_joints, strict=True)
-            )
-            validate_branch_candidate(
-                branch_reference_raw,
-                dry_raw,
-                args.elbow_branch_margin_raw,
-            )
-            print(
-                f"首步离线规划：{motion_mode}"
-                + f", base_delta_mm={[round(value * 1000, 2) for value in delta]}, "
-                + f"dominant={dominant}, reachable={dry_result.executed_m * 1000:.1f}/"
-                + f"{dry_result.requested_m * 1000:.1f} mm, remaining={remaining * 1000:.1f} mm, "
-                + f"plane={plane_clearance * 1000:.1f} mm, final_raw={dry_raw}"
-            )
-            if remaining > args.goal_tolerance_mm / 1000.0 and dry_result.executed_m < args.min_partial_mm / 1000.0:
-                raise RuntimeError("首步安全可达距离太短，拒绝启动")
-            if args.check:
-                log["preflight"] = {
-                    "observation": state_payload(first),
-                    "motion_mode": motion_mode,
-                    "base_delta_m": delta.tolist(),
-                    "target_base_m": target.tolist(),
-                    "desired_gripper_base_m": desired.tolist(),
-                    "marker_origin_base_m": marker_base.tolist(),
-                    "remaining_to_standoff_m": remaining,
-                    "plane_clearance_m": plane_clearance,
-                    "dominant_base_direction": dominant,
-                    "planned_executed_m": dry_result.executed_m,
-                    "planned_full_success": dry_result.full_success,
-                    "planned_final_raw": list(dry_raw),
-                }
-                write_run_log(output_dir, log)
-                print("只读预检完成：未开启扭矩、未发送运动指令。")
-                return 0
 
             if not driver.enabled:
                 driver.hold_then_enable()

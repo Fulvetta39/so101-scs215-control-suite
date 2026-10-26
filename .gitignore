@@ -8,6 +8,8 @@ venv/
 .ruff_cache/
 
 # Local editor and temporary files
+.uv-cache/
+*.part
 .vscode/
 .idea/
 .tmp/
@@ -21,6 +23,7 @@ Thumbs.db
 .env.*
 !.env.example
 config.local.*
+config/local.yaml
 
 # Downloaded speech-recognition models are restored by setup_models.py
 SO101_SCS215_语音控制/models/
