@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "validated_at": "2026-11-22",
+  "scope": "JARVIS plan B visual perception and pointing-to-look prototype",
+  "hardware": {
+    "robot": "SO101 with SCS215 servos",
+    "port": "COM5",
+    "camera_index": 1,
+    "camera_mode": "device"
+  },
+  "validated_capabilities": {
+    "face_detection": {
+      "status": "passed",
+      "notes": "Primary-face selection, smoothing, and short-loss retention passed."
+    },
+    "pointing_detection": {
+      "status": "passed",
+      "notes": "Index-finger direction and point confidence passed in live camera testing."
+    },
+    "shadow_direction_signs": {
+      "right": -3,
+      "left": 3,
+      "down": 3,
+      "up": -3,
+      "units": "degrees"
+    },
+    "horizontal_pointing_control": {
+      "status": "passed",
+      "joint": "shoulder_pan",
+      "max_step_degrees": 3,
+      "max_commands_per_gesture": 3,
+      "observed_steps_degrees": [
+        -2.098,
+        -2.517,
+        -2.517,
+        2.098
+      ],
+      "notes": "Both directions passed. A 2-degree command was swallowed by mechanical deadband; 3 degrees was effective."
+    },
+    "vertical_pointing_control": {
+      "status": "passed_in_single_step_mode",
+      "joint": "wrist_flex",
+      "pulse_degrees": 6,
+      "rate_hz": 0.2,
+      "max_commands_per_gesture": 1
+    },
+    "object_naming": {
+      "status": "passed",
+      "model_reply_example": "画面中央最明显的物体是一支白色电动牙刷，呈细长圆柱形；我没有移动机械臂。",
+      "trigger": "After the bounded pointing gesture and a 1.2 second settling delay."
+    },
+    "automated_tests": {
+      "status": "passed",
+      "count": 28
+    }
+  },
+  "safety_limits": {
+    "pointing_settle_s": 0.8,
+    "server_single_correction_max_degrees": 6,
+    "server_minimum_request_interval_s": 0.12,
+    "latch_on_actuator_no_response": true,
+    "require_pointing_release_after_step_limit": true
+  },
+  "known_limitations": [
+    "The camera-to-table 3D ray intersection and IK gaze are not yet enabled.",
+    "Vertical control is a conservative fixed 6-degree pulse rather than continuous servoing.",
+    "Object naming assumes the target is near the camera center after the bounded turn.",
+    "Success-rate statistics across repeated physical trials still need to be collected."
+  ]
+}

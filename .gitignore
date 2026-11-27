@@ -37,3 +37,9 @@ legacy/SO101_SCS215_视觉闭环控制/data/advanced_ibvs_simulation/
 legacy/SO101_SCS215_视觉闭环控制/data/aruco_detected.png
 legacy/SO101_SCS215_视觉闭环控制/data/hand_eye_manifest.json
 legacy/SO101_SCS215_视觉闭环控制/*任务说明.md
+
+# JARVIS (plan B)
+.venv_perception/
+*.egg-info/
+# MediaPipe models: copy from the handoff package or run scripts/fetch_models.py
+jarvis/perception/models/

@@ -1,0 +1,43 @@
+[server]
+host = "127.0.0.1"
+port = 8000
+
+[robot]
+backend = "lerobot"
+# Find the port with: lerobot-find-port
+port = "COM5"
+id = "so101-follower"
+poses_file = "data/poses.robot.json"
+max_relative_target_degrees = 12.0
+max_tool_delta_degrees = 6.0
+max_turn_motion_degrees = 120.0
+# LeRobot normalized body-joint units span about 300 degrees on SCS215.
+control_units_per_degree = 0.6666667
+
+[robot.joint_limits]
+shoulder_pan = [-100.0, 100.0]
+shoulder_lift = [-100.0, 100.0]
+elbow_flex = [-100.0, 100.0]
+wrist_flex = [-100.0, 100.0]
+wrist_roll = [-100.0, 100.0]
+gripper = [0.0, 100.0]
+
+[camera]
+backend = "device"
+index = 1
+width = 960
+height = 540
+fps = 15
+jpeg_quality = 82
+fallback_to_demo = false
+
+[llm]
+enabled = false
+backend = "qwen"
+base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+model = "qwen3.8-omni-flash"
+api_key_env = "DASHSCOPE_API_KEY"
+timeout_seconds = 120
+max_tool_rounds = 6
+history_turns = 4
+
