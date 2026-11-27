@@ -28,7 +28,7 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     uvicorn.run(
-        "so101_agent.server:app",
+        "jarvis.robot.server:app",
         host=settings.server.host,
         port=settings.server.port,
         log_level=args.log_level,

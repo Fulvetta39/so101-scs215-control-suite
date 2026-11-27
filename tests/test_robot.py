@@ -3,8 +3,8 @@ import time
 
 import pytest
 
-from so101_agent.config import load_settings
-from so101_agent.robot import ArmController, PoseStore, RobotError
+from jarvis.robot.config import load_settings
+from jarvis.robot.robot import ArmController, PoseStore, RobotError
 
 
 def test_pose_store_round_trip(tmp_path: Path) -> None:

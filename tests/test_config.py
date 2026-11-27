@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from so101_agent.config import load_settings
+from jarvis.robot.config import load_settings
 
 
 def test_load_default_settings() -> None:

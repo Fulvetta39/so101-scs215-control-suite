@@ -52,7 +52,7 @@
 ## 关键文件
 
 - `jarvis/perception/`：人脸、手部、指向、连续伺服和物体命名；
-- `so101_agent/`：机器人服务、安全控制和 Qwen Agent；
+- `jarvis/robot/`（原 `so101_agent/`）：机器人服务、安全控制和 Qwen Agent；
 - `web/demo.html`：当前统一人脸/手指页面；
 - `web/index.html`：旧语音页面，默认停用；
 - `run_midterm_demo.ps1`：视觉共同注意演示；

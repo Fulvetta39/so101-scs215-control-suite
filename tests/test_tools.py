@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from so101_agent.camera import CameraService
-from so101_agent.config import load_settings
-from so101_agent.robot import ArmController
-from so101_agent.tools import ArmToolbox
+from jarvis.robot.camera import CameraService
+from jarvis.robot.config import load_settings
+from jarvis.robot.robot import ArmController
+from jarvis.robot.tools import ArmToolbox
 
 
 def test_toolbox_moves_and_reports_refresh() -> None:

@@ -1,4 +1,4 @@
-from so101_agent.camera import make_demo_frame
+from jarvis.robot.camera import make_demo_frame
 
 
 def test_demo_frame_is_jpeg() -> None:

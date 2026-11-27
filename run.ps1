@@ -9,5 +9,5 @@ if (-not (Test-Path -LiteralPath $VenvPython)) {
     throw "Missing .venv. Create the virtual environment and install dependencies first."
 }
 
-& $VenvPython -m so101_agent --config $Config
+& $VenvPython -m jarvis.robot --config $Config
 

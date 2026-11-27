@@ -1,9 +1,9 @@
 from types import SimpleNamespace
 
-from so101_agent.camera import CameraService
-from so101_agent.config import load_settings
-from so101_agent.qwen_agent import QwenRobotAgent
-from so101_agent.robot import ArmController
+from jarvis.robot.camera import CameraService
+from jarvis.robot.config import load_settings
+from jarvis.robot.qwen_agent import QwenRobotAgent
+from jarvis.robot.robot import ArmController
 
 
 class FakeMessage(SimpleNamespace):

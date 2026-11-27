@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from so101_agent.server import app
+from jarvis.robot.server import app
 
 
 def test_server_status_and_demo_frame(monkeypatch, tmp_path: Path) -> None:

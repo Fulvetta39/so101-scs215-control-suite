@@ -3,7 +3,7 @@ requires = ["setuptools>=71"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "so101-omni-agent"
+name = "jarvis-so101"
 version = "0.1.0"
 description = "A voice-and-vision SO101 robot agent powered by Qwen-Omni."
 readme = "README.md"
@@ -31,11 +31,11 @@ perception = [
 ]
 
 [project.scripts]
-so101-agent = "so101_agent.__main__:main"
+jarvis-robot = "jarvis.robot.__main__:main"
 jarvis-perception = "jarvis.perception.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["so101_agent*", "jarvis*"]
+include = ["jarvis*"]
 
 [tool.setuptools.package-data]
 "jarvis.perception" = ["models/*.tflite", "models/*.task"]

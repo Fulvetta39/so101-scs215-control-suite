@@ -92,7 +92,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+WEB_DIR = Path(__file__).resolve().parents[2] / "web"
 app.mount("/assets", StaticFiles(directory=WEB_DIR), name="assets")
 
 
