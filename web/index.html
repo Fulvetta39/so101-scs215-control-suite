@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10161d" />
+    <title>SO101 · Omni Agent</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='15' fill='%2310171d'/%3E%3Cpath d='M17 39h6V25h-6zm12 0h6V17h-6zm12 0h6V22h-6z' fill='%236ef1bf'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/assets/style.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+          <div>
+            <p class="eyebrow">EMBODIED INTELLIGENCE</p>
+            <h1>SO101 <span>Omni Agent</span></h1>
+          </div>
+        </div>
+        <div class="system-pills">
+          <div class="pill" id="model-pill"><i></i><span>模型连接中</span></div>
+          <div class="pill" id="arm-pill"><i></i><span>机械臂连接中</span></div>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <div class="visual-column">
+          <article class="camera-card panel">
+            <div class="card-head">
+              <div>
+                <p class="overline">LIVE INPUT</p>
+                <h2>腕部相机</h2>
+              </div>
+              <div class="live-badge"><span></span> LIVE</div>
+            </div>
+            <div class="camera-frame">
+              <img id="camera" alt="SO101 腕部相机实时画面" />
+              <div class="scanline"></div>
+              <div class="camera-corners" aria-hidden="true">
+                <i></i><i></i><i></i><i></i>
+              </div>
+              <div class="camera-meta" id="camera-meta">CAMERA · --</div>
+              <div class="camera-error" id="camera-error" hidden></div>
+            </div>
+            <div class="camera-footer">
+              <div>
+                <span class="label">BACKEND</span>
+                <strong id="backend-name">--</strong>
+              </div>
+              <div>
+                <span class="label">JOINT SPACE</span>
+                <strong>5 DOF + GRIPPER</strong>
+              </div>
+              <div>
+                <span class="label">SAFETY</span>
+                <strong id="safety-state" class="safe">ENABLED</strong>
+              </div>
+            </div>
+          </article>
+
+          <div class="control-grid">
+            <article class="panel voice-panel">
+              <div class="card-head compact">
+                <div>
+                  <p class="overline">VOICE CONTROL</p>
+                  <h2>直接对它说</h2>
+                </div>
+                <span class="shortcut">空格键</span>
+              </div>
+              <button class="mic-button" id="mic-button" type="button" aria-label="开始录音">
+                <span class="mic-rings"></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V5a3.5 3.5 0 1 0-7 0v7a3.5 3.5 0 0 0 3.5 3.5Z"></path>
+                  <path d="M5.5 11.5v.5a6.5 6.5 0 0 0 13 0v-.5M12 18.5V22M9 22h6"></path>
+                </svg>
+              </button>
+              <p class="mic-label" id="mic-label">点击说话</p>
+              <p class="mic-hint" id="mic-hint">录音结束后，语音与画面会一起交给 Qwen-Omni</p>
+              <div class="waveform" id="waveform" aria-hidden="true"></div>
+            </article>
+
+            <article class="panel text-panel">
+              <div class="card-head compact">
+                <div>
+                  <p class="overline">TEXT COMMAND</p>
+                  <h2>也可以打字</h2>
+                </div>
+              </div>
+              <form id="text-form">
+                <label class="sr-only" for="text-input">机械臂指令</label>
+                <textarea
+                  id="text-input"
+                  rows="3"
+                  maxlength="1000"
+                  placeholder="例如：看看桌上有什么，然后把它移动到左边"
+                ></textarea>
+                <button class="send-button" type="submit" id="send-button">
+                  发送指令
+                  <span aria-hidden="true">↗</span>
+                </button>
+              </form>
+            </article>
+          </div>
+        </div>
+
+        <aside class="side-column">
+          <article class="panel chat-panel">
+            <div class="card-head">
+              <div>
+                <p class="overline">AGENT TRACE</p>
+                <h2>对话与动作</h2>
+              </div>
+              <button class="icon-button" id="reset-button" title="清空对话" aria-label="清空对话">
+                ↺
+              </button>
+            </div>
+            <div class="chat-log" id="chat-log">
+              <div class="message assistant">
+                <div class="message-author"><span>小臂</span><time>READY</time></div>
+                <div class="bubble">
+                  你好，我是你的 SO101 全模态助手。把目标放在腕部相机视野内，然后按空格开始说话。
+                </div>
+              </div>
+            </div>
+            <div class="thinking" id="thinking" hidden>
+              <div class="thinking-dots"><i></i><i></i><i></i></div>
+              <span id="thinking-label">正在观察并规划动作</span>
+            </div>
+          </article>
+
+          <article class="panel pose-panel">
+            <div class="card-head compact">
+              <div>
+                <p class="overline">CALIBRATION</p>
+                <h2>命名姿态</h2>
+              </div>
+            </div>
+            <div class="pose-list" id="pose-list">
+              <span class="empty">正在读取姿态...</span>
+            </div>
+            <div class="pose-save">
+              <input id="pose-name" type="text" maxlength="64" placeholder="例如：above_red_block" />
+              <button id="save-pose" type="button">记录当前姿态</button>
+            </div>
+            <p class="tiny-note">固定好目标位置后记录姿态，Agent 就能按名称精确复用。</p>
+          </article>
+
+          <button class="resume-button" id="resume-button" type="button" disabled>
+            <span>▶</span>
+            确认安全并恢复
+          </button>
+          <button class="stop-button" id="stop-button" type="button">
+            <span>■</span>
+            急停并保持位置
+          </button>
+        </aside>
+      </section>
+
+      <footer>
+        <span>Qwen-Omni · LeRobot SO101 · Local camera</span>
+        <span id="clock">--:--:--</span>
+      </footer>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
+

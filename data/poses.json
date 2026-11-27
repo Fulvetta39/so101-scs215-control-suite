@@ -1,0 +1,35 @@
+{
+  "home": {
+    "shoulder_pan": 0.0,
+    "shoulder_lift": -8.0,
+    "elbow_flex": 22.0,
+    "wrist_flex": -5.0,
+    "wrist_roll": 0.0,
+    "gripper": 70.0
+  },
+  "observe": {
+    "shoulder_pan": -4.0,
+    "shoulder_lift": 4.0,
+    "elbow_flex": 28.0,
+    "wrist_flex": -10.0,
+    "wrist_roll": 0.0,
+    "gripper": 75.0
+  },
+  "above_red_block": {
+    "shoulder_pan": -16.0,
+    "shoulder_lift": 10.0,
+    "elbow_flex": 38.0,
+    "wrist_flex": -15.0,
+    "wrist_roll": 12.0,
+    "gripper": 80.0
+  },
+  "above_blue_cup": {
+    "shoulder_pan": 16.0,
+    "shoulder_lift": 10.0,
+    "elbow_flex": 38.0,
+    "wrist_flex": -15.0,
+    "wrist_roll": -12.0,
+    "gripper": 80.0
+  }
+}
+

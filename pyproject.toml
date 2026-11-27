@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=71"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis-so101"
+version = "0.1.0"
+description = "A voice-and-vision SO101 robot agent powered by Qwen-Omni."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116,<1.0",
+  "openai>=1.99,<3.0",
+  "opencv-python-headless>=4.10,<5.0",
+  "pillow>=10.0,<13.0",
+  "python-dotenv>=1.1,<2.0",
+  "python-multipart>=0.0.20,<1.0",
+  "uvicorn[standard]>=0.35,<1.0",
+]
+
+[project.optional-dependencies]
+robot = [
+  "lerobot @ git+https://github.com/JyiDeng/lerobot_EAI_SCS215.git@bd2ee0bd961904090873d208fe79dc0ab3a4f863",
+]
+test = [
+  "httpx>=0.28,<1.0",
+  "pytest>=8.0,<10.0",
+]
+perception = [
+  "mediapipe==1.2.3",
+]
+
+[project.scripts]
+jarvis-robot = "jarvis.robot.__main__:main"
+jarvis-perception = "jarvis.perception.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["jarvis*"]
+
+[tool.setuptools.package-data]
+"jarvis.perception" = ["models/*.tflite", "models/*.task"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
