@@ -63,10 +63,11 @@ class ArmToolbox:
                 if pose is None:
                     raise RobotError(f"没有名为 {pose_name!r} 的校准姿态。")
                 current = self.arm.positions()
-                largest_units = max(abs(pose[joint] - current[joint]) for joint in pose)
-                self._reserve_motion(
-                    largest_units / self.arm.settings.control_units_per_degree
+                largest_degrees = max(
+                    abs(self.arm.to_degrees(joint, pose[joint] - current[joint]))
+                    for joint in pose
                 )
+                self._reserve_motion(largest_degrees)
                 result = self.arm.move_to_pose(pose_name)
                 self._motion_used += abs(float(result["delta_degrees"]))
                 event = self._event(name, arguments, result, refresh_image=True)
@@ -81,8 +82,9 @@ class ArmToolbox:
                 }
                 event = self._event(name, arguments, result, refresh_image=True)
             elif name == "emergency_stop":
-                self.arm.emergency_stop()
-                result = {"ok": True, "message": "急停已触发，机械臂已保持当前位置。"}
+                # Spoken "stop" holds the pose; torque-off is web-only.
+                self.arm.halt()
+                result = {"ok": True, "message": "已停止，机械臂保持当前位置。"}
                 event = self._event(name, arguments, result, refresh_image=False)
             else:
                 raise RobotError(f"未知工具：{name}")

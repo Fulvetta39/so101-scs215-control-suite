@@ -11,7 +11,10 @@ poses_file = "data/poses.robot.json"
 max_relative_target_degrees = 12.0
 max_tool_delta_degrees = 6.0
 max_turn_motion_degrees = 120.0
-# LeRobot normalized body-joint units span about 300 degrees on SCS215.
+# Units per real degree come from each joint's calibration range.
+# control_units_per_degree is only used with degree_conversion = "fixed"
+# (the pre-2026-11-27 behaviour, which under-turned every joint).
+degree_conversion = "calibration"
 control_units_per_degree = 0.6666667
 
 [robot.joint_limits]

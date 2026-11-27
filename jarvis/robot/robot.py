@@ -33,7 +33,9 @@ class ArmBackend(Protocol):
     def send_positions(self, positions: dict[str, float]) -> dict[str, float]: ...
     def stream_positions(self, positions: dict[str, float]) -> None: ...
     def hold(self) -> None: ...
+    def freeze(self) -> None: ...
     def resume(self) -> None: ...
+    def units_per_degree(self) -> dict[str, float] | None: ...
 
 
 class PoseStore:
@@ -107,8 +109,18 @@ class MockArm:
     def hold(self) -> None:
         return None
 
+    def freeze(self) -> None:
+        return None
+
     def resume(self) -> None:
         return None
+
+    def units_per_degree(self) -> dict[str, float] | None:
+        return None
+
+
+# SCS215: 10-bit position register spanning 300 degrees.
+SCS215_DEGREES_PER_STEP = 300.0 / 1024.0
 
 
 class LeRobotArm:
@@ -206,10 +218,38 @@ class LeRobotArm:
             robot = self._require_robot()
             robot.bus.disable_torque()
 
+    def freeze(self) -> None:
+        """Stop in place with torque kept on: goal := present position."""
+        with self._lock:
+            robot = self._require_robot()
+            present = {
+                joint: robot.bus.read("Present_Position", joint, normalize=False)
+                for joint in JOINTS
+            }
+            robot.bus.sync_write("Goal_Position", present, normalize=False)
+
     def resume(self) -> None:
         with self._lock:
             robot = self._require_robot()
             self._hold_and_enable(robot)
+
+    def units_per_degree(self) -> dict[str, float] | None:
+        """Per-joint LeRobot normalized units per real degree.
+
+        LeRobot maps each joint's calibrated [range_min, range_max] onto
+        [-100, 100] (gripper: [0, 100]), so one unit is a different angle on
+        every joint.
+        """
+        robot = self._require_robot()
+        result: dict[str, float] = {}
+        for joint in JOINTS:
+            calibration = robot.calibration[joint]
+            span_steps = float(calibration.range_max - calibration.range_min)
+            if span_steps <= 0:
+                raise RobotError(f"关节 {joint} 的校准范围无效。")
+            span_units = 100.0 if joint == "gripper" else 200.0
+            result[joint] = span_units / (span_steps * SCS215_DEGREES_PER_STEP)
+        return result
 
     def _hold_and_enable(self, robot) -> None:
         robot.bus.disable_torque()
@@ -292,6 +332,11 @@ class ArmController:
     SMOOTH_ACCELERATION = 30.0
     SMOOTH_TARGET_LEAD = 2.0
     SMOOTH_DEADBAND = 0.03
+    # Follow-error watchdog: the 30 Hz loop is open-loop, so compare the
+    # streamed command with the measured position a few times per second.
+    SMOOTH_FOLLOW_CHECK_EVERY = 5
+    SMOOTH_FOLLOW_ERROR_DEG = 10.0
+    SMOOTH_FOLLOW_ERROR_S = 1.0
 
     def __init__(self, settings: RobotSettings):
         self.settings = settings
@@ -299,6 +344,9 @@ class ArmController:
         self.poses = PoseStore(settings.poses_file)
         self._lock = threading.RLock()
         self._stop = threading.Event()
+        # True only when the latched stop also removed torque (emergency stop).
+        self._torque_off = False
+        self._units_per_degree: dict[str, float] | None = None
         self._connected = False
         self._last_error: str | None = None
         self._smooth_lock = threading.Lock()
@@ -311,8 +359,15 @@ class ArmController:
     def connect(self) -> None:
         with self._lock:
             self.backend.connect()
+            if self.settings.degree_conversion == "calibration":
+                self._units_per_degree = self.backend.units_per_degree()
+            elif self.settings.degree_conversion != "fixed":
+                raise RobotError(
+                    f"未知 degree_conversion：{self.settings.degree_conversion!r}"
+                )
             self._connected = True
             self._stop.clear()
+            self._torque_off = False
 
     def disconnect(self) -> None:
         self.stop_smooth_tracking()
@@ -328,7 +383,26 @@ class ArmController:
         if not self._connected:
             raise RobotError("机械臂尚未连接。")
         if self._stop.is_set():
-            raise RobotError("急停已触发。请检查现场并重启 Agent 后再操作。")
+            raise RobotError("急停/停止已触发。请确认现场安全后点击恢复再操作。")
+
+    def units_per_degree(self, joint: str) -> float:
+        """Controller units for one real degree of ``joint``."""
+        if self._units_per_degree is not None:
+            return self._units_per_degree[joint]
+        return self.settings.control_units_per_degree
+
+    def to_units(self, joint: str, degrees: float) -> float:
+        return degrees * self.units_per_degree(joint)
+
+    def to_degrees(self, joint: str, units: float) -> float:
+        return units / self.units_per_degree(joint)
+
+    def _interrupt_hardware(self) -> None:
+        """Act on a latched stop from inside a motion loop."""
+        if self._torque_off:
+            self.backend.hold()
+        else:
+            self.backend.freeze()
 
     def clamp_position(self, joint: str, value: float) -> float:
         limits = self.settings.joint_limits.get(joint)
@@ -369,7 +443,7 @@ class ArmController:
                 if not math.isfinite(requested):
                     raise RobotError("平滑伺服增量必须是有限数值。")
                 requested = max(-6.0, min(6.0, requested))
-                units = requested * self.settings.control_units_per_degree
+                units = self.to_units(joint, requested)
                 # Each visual update replaces the short look-ahead target
                 # relative to the current command. Accumulating every frame
                 # causes the arm to keep chasing stale errors after the face
@@ -383,8 +457,9 @@ class ArmController:
                 self._smooth_target[joint] = max(lower, min(upper, target))
             accepted = {
                 joint: round(
-                    (self._smooth_target[joint] - current[joint])
-                    / self.settings.control_units_per_degree,
+                    self.to_degrees(
+                        joint, self._smooth_target[joint] - current[joint]
+                    ),
                     3,
                 )
                 for joint in deltas_degrees
@@ -413,10 +488,52 @@ class ArmController:
                 self._smooth_command.clear()
                 self._smooth_velocity.clear()
 
+    def _smooth_follow_error_exceeded(self, since: float | None, now: float) -> tuple[bool, float | None]:
+        """Return (trip, new_since) after comparing command and measured pose."""
+        with self._smooth_lock:
+            command = dict(self._smooth_command)
+        if not command:
+            return False, None
+        try:
+            measured = self.backend.get_positions()
+        except Exception:
+            LOGGER.exception("Follow-error check could not read positions")
+            return True, since
+        worst_joint, worst = None, 0.0
+        for joint, value in command.items():
+            if joint not in measured:
+                continue
+            error = abs(self.to_degrees(joint, value - measured[joint]))
+            if error > worst:
+                worst_joint, worst = joint, error
+        if worst <= self.SMOOTH_FOLLOW_ERROR_DEG:
+            return False, None
+        if since is None:
+            return False, now
+        if now - since < self.SMOOTH_FOLLOW_ERROR_S:
+            return False, since
+        self._last_error = (
+            f"{worst_joint} 跟随误差 {worst:.1f}° 超过 "
+            f"{self.SMOOTH_FOLLOW_ERROR_DEG:.0f}° 持续 "
+            f"{self.SMOOTH_FOLLOW_ERROR_S:.1f}s，已停止并保持。"
+        )
+        LOGGER.error(self._last_error)
+        return True, since
+
     def _smooth_loop(self) -> None:
         period = 1.0 / self.SMOOTH_RATE_HZ
+        cycle = 0
+        follow_error_since: float | None = None
         while not self._smooth_stop.is_set():
             started = time.monotonic()
+            cycle += 1
+            if cycle % self.SMOOTH_FOLLOW_CHECK_EVERY == 0:
+                trip, follow_error_since = self._smooth_follow_error_exceeded(
+                    follow_error_since, started
+                )
+                if trip:
+                    self.halt()
+                    break
             with self._smooth_lock:
                 target = dict(self._smooth_target)
                 command = dict(self._smooth_command)
@@ -480,7 +597,7 @@ class ArmController:
             -self.settings.max_tool_delta_degrees,
             min(self.settings.max_tool_delta_degrees, requested),
         )
-        requested_units = requested * self.settings.control_units_per_degree
+        requested_units = self.to_units(joint, requested)
 
         with self._lock:
             self._ensure_ready()
@@ -493,14 +610,14 @@ class ArmController:
             steps = max(1, math.ceil(abs(actual_units) / 2.0))
             for step in range(1, steps + 1):
                 if self._stop.is_set():
-                    self.backend.hold()
+                    self._interrupt_hardware()
                     raise RobotError("运动已由急停中断。")
                 positions = {joint: start[joint] + actual_units * step / steps}
                 self.backend.send_positions(positions)
                 time.sleep(0.08)
 
             final = self.backend.get_positions()
-            actual_degrees = actual_units / self.settings.control_units_per_degree
+            actual_degrees = self.to_degrees(joint, actual_units)
             return self._motion_result(final, joint, actual_degrees, False, "关节运动完成。")
 
     def move_joints(self, deltas_degrees: dict[str, float]) -> dict[str, object]:
@@ -536,7 +653,7 @@ class ArmController:
             start = self.backend.get_positions()
             target = dict(start)
             requested_units = {
-                joint: delta * self.settings.control_units_per_degree
+                joint: self.to_units(joint, delta)
                 for joint, delta in clean.items()
             }
             for joint, delta in requested_units.items():
@@ -559,7 +676,7 @@ class ArmController:
             steps = min(steps, 8)
             for step in range(1, steps + 1):
                 if self._stop.is_set():
-                    self.backend.hold()
+                    self._interrupt_hardware()
                     raise RobotError("视觉伺服已由急停中断。")
                 ratio = step / steps
                 positions = {
@@ -571,11 +688,7 @@ class ArmController:
             time.sleep(0.12)
             final = self.backend.get_positions()
             applied = {
-                joint: round(
-                    (final[joint] - start[joint])
-                    / self.settings.control_units_per_degree,
-                    3,
-                )
+                joint: round(self.to_degrees(joint, final[joint] - start[joint]), 3)
                 for joint in actual_units
             }
             if all(abs(value) < 0.15 for value in applied.values()):
@@ -610,7 +723,7 @@ class ArmController:
             steps = min(steps, 60)
             for step in range(1, steps + 1):
                 if self._stop.is_set():
-                    self.backend.hold()
+                    self._interrupt_hardware()
                     raise RobotError("姿态运动已由急停中断。")
                 ratio = step / steps
                 positions = {
@@ -620,7 +733,10 @@ class ArmController:
                 self.backend.send_positions(positions)
                 time.sleep(0.06)
             final = self.backend.get_positions()
-            largest_degrees = largest_units / self.settings.control_units_per_degree
+            largest_degrees = max(
+                abs(self.to_degrees(joint, target[joint] - start[joint]))
+                for joint in JOINTS
+            )
             return self._motion_result(
                 final, None, largest_degrees, False, f"已到达姿态 {name}。"
             )
@@ -634,7 +750,7 @@ class ArmController:
             steps = max(1, math.ceil(abs(value - start["gripper"]) / 4.0))
             for step in range(1, steps + 1):
                 if self._stop.is_set():
-                    self.backend.hold()
+                    self._interrupt_hardware()
                     raise RobotError("夹爪运动已由急停中断。")
                 positions = {
                     "gripper": start["gripper"]
@@ -645,7 +761,27 @@ class ArmController:
             final = self.backend.get_positions()
             return self._motion_result(final, "gripper", value - start["gripper"], False, "夹爪已调整。")
 
+    def halt(self) -> None:
+        """Latched stop that keeps torque on and holds the current pose."""
+        self._smooth_stop.set()
+        self._stop.set()
+        self.stop_smooth_tracking()
+        with self._lock:
+            if self._connected and not self._torque_off:
+                try:
+                    self.backend.freeze()
+                except Exception:
+                    LOGGER.exception("Freeze failed during halt; removing torque")
+                    self._torque_off = True
+                    try:
+                        self.backend.hold()
+                    except Exception:
+                        LOGGER.exception("Torque off also failed")
+        LOGGER.warning("SO101 halted and holding position")
+
     def emergency_stop(self) -> None:
+        """Latched stop that removes torque. Loaded joints will drop."""
+        self._torque_off = True
         self._smooth_stop.set()
         self._stop.set()
         with self._lock:
@@ -660,12 +796,17 @@ class ArmController:
         with self._lock:
             if not self._connected:
                 raise RobotError("机械臂尚未连接。")
-            self.backend.resume()
+            if self._torque_off:
+                self.backend.resume()
+                message = "机械臂已恢复力矩，并保持当前位置。"
+            else:
+                message = "已解除停止，机械臂保持当前位置。"
+            self._torque_off = False
             self._stop.clear()
             self._last_error = None
         return {
             "ok": True,
-            "message": "机械臂已恢复力矩，并保持当前位置。",
+            "message": message,
             "stopped": False,
         }
 
@@ -702,6 +843,10 @@ class ArmController:
             "backend": self.settings.backend,
             "connected": self._connected,
             "stopped": self._stop.is_set(),
+            "torque_off": self._torque_off,
+            "degree_conversion": (
+                "calibration" if self._units_per_degree is not None else "fixed"
+            ),
             "port": self.settings.port,
             "poses": self.poses.names(),
             "last_error": self._last_error,

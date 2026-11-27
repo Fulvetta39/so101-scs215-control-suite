@@ -280,7 +280,7 @@ class _PreviewRequestHandler(BaseHTTPRequestHandler):
   <h1>__TITLE__</h1>
   <img src="/stream" alt="实时摄像头画面">
   <p>__INSTRUCTIONS__ 黄色箭头表示建议转向；__DISCLAIMER__</p>
-  <button id="stop" type="button">急停并保持位置</button>
+  <button id="stop" type="button">停止并保持</button>
   <button id="resume" type="button">确认现场安全并恢复</button>
   <pre id="status">正在读取状态...</pre>
 </main>
@@ -306,16 +306,16 @@ document.getElementById('stop').addEventListener('click', async () => {
   try {
     const response = await fetch('/api/stop', { method: 'POST' });
     const result = await response.json();
-    if (!response.ok || !result.ok) throw new Error(result.message || '急停失败');
-    document.getElementById('status').textContent = '急停已触发，机械臂已保持当前位置。';
+    if (!response.ok || !result.ok) throw new Error(result.message || '停止失败');
+    document.getElementById('status').textContent = '已停止，机械臂保持当前位置。';
     document.getElementById('resume').disabled = false;
   } catch (error) {
-    document.getElementById('status').textContent = `急停失败：${error.message}`;
+    document.getElementById('status').textContent = `停止失败：${error.message}`;
     document.getElementById('stop').disabled = false;
   }
 });
 document.getElementById('resume').addEventListener('click', async () => {
-  if (!window.confirm('请确认机械臂周围清空、急停可触达。是否恢复力矩并继续？')) return;
+  if (!window.confirm('请确认机械臂周围清空、急停可触达。是否恢复并继续？')) return;
   document.getElementById('resume').disabled = true;
   try {
     const response = await fetch('/api/resume', { method: 'POST' });

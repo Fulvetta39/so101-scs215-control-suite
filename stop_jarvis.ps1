@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Continue"
 
 try {
-    Invoke-RestMethod -TimeoutSec 3 -Method Post http://127.0.0.1:8000/api/stop | Out-Null
+    # Shutdown keeps the previous behaviour: remove torque before closing.
+    Invoke-RestMethod -TimeoutSec 3 -Method Post http://127.0.0.1:8000/api/estop | Out-Null
 } catch {
 }
 

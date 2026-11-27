@@ -70,6 +70,11 @@ api_key_env = "SO101_TEST_MISSING_KEY"
         stopped = client.post("/api/stop")
         assert stopped.status_code == 200
         assert stopped.json()["ok"] is True
+        assert client.get("/api/status").json()["robot"]["torque_off"] is False
+
+        estopped = client.post("/api/estop")
+        assert estopped.status_code == 200
+        assert client.get("/api/status").json()["robot"]["torque_off"] is True
 
         resumed = client.post("/api/resume")
         assert resumed.status_code == 200

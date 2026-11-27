@@ -77,7 +77,8 @@
       </div>
       <div class="spacer"></div>
       <button id="reload">刷新画面</button>
-      <button class="stop" id="stop">急停并保持位置</button>
+      <button class="stop" id="stop">停止并保持</button>
+      <button class="stop" id="estop">急停卸力</button>
       <button class="resume" id="resume" disabled>确认安全并恢复</button>
     </header>
     <main>
@@ -96,7 +97,9 @@
           const robot = state.robot || {};
           document.querySelector("#robot").textContent = robot.connected ? "CONNECTED" : "OFFLINE";
           document.querySelector("#camera").textContent = state.camera?.error ? "ERROR" : "READY";
-          document.querySelector("#safety").textContent = robot.stopped ? "STOPPED" : "ENABLED";
+          document.querySelector("#safety").textContent = !robot.stopped
+            ? "ENABLED"
+            : robot.torque_off ? "TORQUE OFF" : "HOLDING";
           document.querySelector("#resume").disabled = !robot.stopped;
         } catch {
           document.querySelector("#robot").textContent = "SERVICE OFFLINE";
@@ -105,13 +108,18 @@
         }
       }
 
+      // Stop must act on the first click: no confirmation dialog.
       document.querySelector("#stop").addEventListener("click", async () => {
-        if (!window.confirm("确认触发急停并卸力？")) return;
         const response = await fetch("/api/stop", { method: "POST" });
         if (response.ok) refreshStatus();
       });
+      document.querySelector("#estop").addEventListener("click", async () => {
+        if (!window.confirm("卸力后大臂会下落。确认急停卸力？")) return;
+        const response = await fetch("/api/estop", { method: "POST" });
+        if (response.ok) refreshStatus();
+      });
       document.querySelector("#resume").addEventListener("click", async () => {
-        if (!window.confirm("请确认机械臂周围清空、急停可触达。是否恢复力矩？")) return;
+        if (!window.confirm("请确认机械臂周围清空、急停可触达。是否恢复？")) return;
         const response = await fetch("/api/resume", { method: "POST" });
         if (response.ok) refreshStatus();
         else alert("恢复失败，请查看服务状态。");

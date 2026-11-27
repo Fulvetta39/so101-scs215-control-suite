@@ -26,6 +26,10 @@ class RobotSettings:
     max_tool_delta_degrees: float = 8.0
     max_turn_motion_degrees: float = 30.0
     control_units_per_degree: float = 1.0
+    # "fixed": every joint uses control_units_per_degree (mock / legacy).
+    # "calibration": derive units per real degree from each joint's LeRobot
+    # calibration range (SCS215: 1024 steps = 300 degrees).
+    degree_conversion: str = "fixed"
     joint_limits: dict[str, tuple[float, float]] = field(
         default_factory=lambda: {
             "shoulder_pan": (-100.0, 100.0),

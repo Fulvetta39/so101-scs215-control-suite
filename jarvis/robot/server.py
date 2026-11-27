@@ -217,9 +217,18 @@ async def chat(
 
 @app.post("/api/stop")
 async def stop(request: Request) -> dict:
+    """Latched stop that keeps torque on and holds the current pose."""
+    runtime = runtime_from_request(request)
+    await asyncio.to_thread(runtime.arm.halt)
+    return {"ok": True, "message": "已停止，机械臂保持当前位置。"}
+
+
+@app.post("/api/estop")
+async def estop(request: Request) -> dict:
+    """Latched stop that removes torque. Loaded joints will drop."""
     runtime = runtime_from_request(request)
     await asyncio.to_thread(runtime.arm.emergency_stop)
-    return {"ok": True, "message": "急停已触发。"}
+    return {"ok": True, "message": "急停已触发，已卸力。"}
 
 
 @app.post("/api/resume")
