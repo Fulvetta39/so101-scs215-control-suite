@@ -23,17 +23,17 @@ Thumbs.db
 config.local.*
 
 # Downloaded speech-recognition models are restored by setup_models.py
-SO101_SCS215_语音控制/models/
+legacy/SO101_SCS215_语音控制/models/
 
 # Hardware-specific calibration records generated locally
-SO101_SCS215_舵机校准与限位/records/*.json
+legacy/SO101_SCS215_舵机校准与限位/records/*.json
 
 # Generated vision captures, run logs, and local submission notes
-SO101_SCS215_视觉闭环控制/data/camera/
-SO101_SCS215_视觉闭环控制/data/hand_eye/
-SO101_SCS215_视觉闭环控制/data/simple_servo/
-SO101_SCS215_视觉闭环控制/data/acceptance_run_*/
-SO101_SCS215_视觉闭环控制/data/advanced_ibvs_simulation/
-SO101_SCS215_视觉闭环控制/data/aruco_detected.png
-SO101_SCS215_视觉闭环控制/data/hand_eye_manifest.json
-SO101_SCS215_视觉闭环控制/*任务说明.md
+legacy/SO101_SCS215_视觉闭环控制/data/camera/
+legacy/SO101_SCS215_视觉闭环控制/data/hand_eye/
+legacy/SO101_SCS215_视觉闭环控制/data/simple_servo/
+legacy/SO101_SCS215_视觉闭环控制/data/acceptance_run_*/
+legacy/SO101_SCS215_视觉闭环控制/data/advanced_ibvs_simulation/
+legacy/SO101_SCS215_视觉闭环控制/data/aruco_detected.png
+legacy/SO101_SCS215_视觉闭环控制/data/hand_eye_manifest.json
+legacy/SO101_SCS215_视觉闭环控制/*任务说明.md
